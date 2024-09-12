@@ -1,5 +1,5 @@
 # HACK-U
-以下シーケンス図です．変なところは修正しちゃってください．
+## シーケンス図
 ```mermaid
 sequenceDiagram
     participant User as ユーザー
