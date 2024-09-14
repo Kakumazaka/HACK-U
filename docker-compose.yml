@@ -1,0 +1,22 @@
+version: '1'
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+
+  db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
