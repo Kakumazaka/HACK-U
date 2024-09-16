@@ -11,10 +11,10 @@ app.listen(PORT, () => {
 
 // PostgreSQLの接続設定
 const pool = new Pool({
-    user: 'otk1',
+    user: 'user',
     host: 'localhost',
     database: 'DB',
-    password: 'password0',
+    password: 'password',
     port: 5432,
   });
 
@@ -52,14 +52,14 @@ app.post('/add-item', async (req, res) => {
 app.post('/add-new-item', async (req, res) => {
     // フロントエンドから商品名、期限を取得
     const { name, consumptionPeriod } = req.body;
-  
     // 今日の日付を取得
     const purchaseDate = getCurrentDate();
-  
     try {
       // 新しい商品情報をDBに追加するクエリ
-      const insertQuery = 'INSERT INTO item (name, purchaseDate, consumptionPeriod) VALUES ($1, $2, $3)';
-      await pool.query(insertQuery, [name, purchaseDate, consumptionPeriod]);
+      const insertQuery = 'INSERT INTO item (name, purchaseDate, consumptionPeriod) VALUES ($1, $2, $3) RETURNING *';
+      const value = [name, purchaseDate, consumptionPeriod];
+      const result = await pool.query(insertQuery, value);
+
       res.status(201).send(`New item ${name} added successfully.`);
     } catch (error) {
       console.error('Error adding new item:', error);
