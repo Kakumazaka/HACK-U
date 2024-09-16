@@ -1,6 +1,7 @@
-import React from 'react';
+import './App.css';
+import Memo from './/memo';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Memo from './memo';
+
 
 function App() {
   return (
@@ -11,5 +12,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

@@ -15,58 +15,96 @@ function Memo() {
     localStorage.setItem('memos', JSON.stringify(memos));
   }, [memos]);
 
-  // バーコードスキャナを開始する関数
-  const startBarcodeScanner = () => {
-    setScanning(true);
-    Quagga.init({
-      inputStream: {
-        type: 'LiveStream',
-        constraints: {
-          width: 640,
-          height: 480,
-          facingMode: 'environment' // リアカメラを使用
-        }
-      },
-      decoder: {
-        readers: ['ean_reader'] // EANコードリーダー
-      }
-    }, (err) => {
-      if (err) {
-        console.error('QuaggaJSの初期化中にエラーが発生しました:', err);
-        setScanning(false);
-        return;
-      }
-      Quagga.start();
+  let stream = null;
+let isQuaggaRunning = false;  // Quaggaが動作中かどうかを管理するフラグ
+
+$(document).ready(() => {
+    console.log("Ready!!");
+
+    $("#my_start").click(() => {
+		if (isQuaggaRunning) {
+			console.log("Quagga is already running.");
+			return;
+		}
+	
+		console.log("Start!!");
+	
+		if (!isQuaggaRunning) {
+			Quagga.init({
+				inputStream: {
+					name: "Live",
+					type: "LiveStream",
+					target: document.querySelector("#my_quagga"),
+					constraints: {
+						facingMode: "user",  // 前面カメラを使用
+						width: 640,
+						height: 480
+					}
+				},
+				decoder: {
+					readers: ["ean_reader"]
+				}
+			}, err => {
+				if (err) {
+					console.error("Quagga.init error:", err);
+					return;
+				}
+				console.log("Initialization finished!!");
+				Quagga.start();
+				isQuaggaRunning = true;  // Quaggaが起動したことをフラグで管理
+			});
+		}
+	});
+	
+
+	$("#my_stop").click(() => {
+		console.log("Stop!!");
+		if (isQuaggaRunning) {
+			Quagga.stop();
+			isQuaggaRunning = false;
+			if (stream) {
+				//カメラのストリームを停止
+				stream.getTracks().forEach(track => track.stop());
+				stream = null;
+				console.log("Camera stopped!!");
+			}
+		} else {
+			console.log("Quagga is not running.");
+		}
     });
 
-    // バーコードが検出されたときの処理
-    Quagga.onDetected((data) => {
-      const code = data.codeResult.code;
-      console.log('バーコードが検出されました:', code);
-      setBarcode(code);
-      Quagga.stop(); // スキャンを停止
-      setScanning(false);
-      addBarcodeToMemos(code); // 検出したバーコードをメモとして追加
-      sendBarcodeToServer(code); // バックエンドに送信
+    Quagga.onProcessed(result => {
+        if (!result || typeof result !== "object" || !result.boxes) return;
+        const ctx = Quagga.canvas.ctx.overlay;
+        const canvas = Quagga.canvas.dom.overlay;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        Quagga.ImageDebug.drawPath(result.boxes[0], { x: 0, y: 1 }, ctx, { color: "blue", lineWidth: 5 });
     });
-  };
+
+    Quagga.onDetected(result => {
+        console.log(result.codeResult.code);
+        $("#my_result").text(result.codeResult.code);
+        $("#my_barcode div").barcode(result.codeResult.code, "ean13");
+    });
+});
+
 
   // バーコードデータをバックエンドに送信する関数
-  const sendBarcodeToServer = async (code) => {
-    try {
-      const response = await fetch('/api/barcode', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ barcode: code }),
-      });
-      const result = await response.json();
-      console.log('サーバーからのレスポンス:', result);
-    } catch (error) {
-      console.error('バーコード送信中にエラーが発生しました:', error);
-    }
-  };
+//   const sendBarcodeToServer = async (code) => {
+//     try {
+//       const response = await fetch('/api/barcode', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ barcode: code }),
+//       });
+//       const result = await response.json();
+//       console.log('サーバーからのレスポンス:', result);
+//     } catch (error) {
+//       console.error('バーコード送信中にエラーが発生しました:', error);
+//     }
+//   };
 
   // メモを追加する関数
   const addMemo = () => {
