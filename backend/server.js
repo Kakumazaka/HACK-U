@@ -4,10 +4,6 @@ const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const PORT = 5000;
 
-//app.get("/", (req, res) => {
-//    res.send("Hello Express");
-//})
-
 //サーバー起動
 app.listen(PORT, () => {
     console.log("server is running on PORT " + PORT);
@@ -15,46 +11,59 @@ app.listen(PORT, () => {
 
 // PostgreSQLの接続設定
 const pool = new Pool({
-    user: 'your_db_user',
+    user: 'otk1',
     host: 'localhost',
-    database: 'your_db_name',
-    password: 'your_db_password',
+    database: 'DB',
+    password: 'password0',
     port: 5432,
   });
 
   //ミドルウェアの設定
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-
-// 商品情報を取得する (期限が切れている商品を取得)
-//app.get('/', async (req, res) => {
-//    try {
-//      const currentDate = new Date();
-//       const query = 'SELECT name FROM products WHERE consumptionPeriod < $1';
-//       const result = await pool.query(query, [currentDate]);
-//       const expiredItems = result.rows.map(row => row.name);
-//       res.json(expiredItems);
-//     } catch (error) {
-//       console.error('Error fetching items:', error);
-//       res.status(500).send('Error fetching items');
-//     }
-//   });
   
-  // 新しい商品情報をDBに追加する
-  app.post('/add-item', async (req, res) => {
-    //フロントエンドから商品名を取得したと仮定してコードを書く
+// 商品名照会
+app.post('/add-item', async (req, res) => {
+    //フロントエンドから商品名を取得
     const { name } = req.body;
-
     //今日の日付を取得
-    const purchaseDate = getCurrentDate()
+    const purchaseDate = getCurrentDate();
   
     try {
-      const query = 'INSERT INTO products (name, purchaseDate, consumptionPeriod) VALUES ($1, $2, $3)';
-      await pool.query(query, [name, purchaseDate, consumptionPeriod]);
-      res.status(201).send('Item added successfully');
+        // データベース内で商品名が一致するか確認
+        const selectQuery = 'SELECT * FROM item WHERE name = $1';
+        const result = await pool.query(selectQuery, [name]);
+        if (result.rows.length > 0) {
+            // 商品名が一致する場合、purchaseDateを更新
+            const updateQuery = 'UPDATE item SET purchaseDate = $1 WHERE name = $2';
+            await pool.query(updateQuery, [purchaseDate, name]);
+            res.status(200).send(`Product ${name} updated successfully with new purchase date.`);
+        } else {
+            // 商品名が一致しない場合、フロントエンドに通知
+            res.status(404).send(`No matching product found for name: ${name}`);
+        }
     } catch (error) {
-      console.error('Error adding item:', error);
-      res.status(500).send('Error adding item');
+        console.error('Error processing item:', error);
+        res.status(500).send('Error processing item');
+    }
+});
+
+//商品をDBに追加
+app.post('/add-new-item', async (req, res) => {
+    // フロントエンドから商品名、期限を取得
+    const { name, consumptionPeriod } = req.body;
+  
+    // 今日の日付を取得
+    const purchaseDate = getCurrentDate();
+  
+    try {
+      // 新しい商品情報をDBに追加するクエリ
+      const insertQuery = 'INSERT INTO item (name, purchaseDate, consumptionPeriod) VALUES ($1, $2, $3)';
+      await pool.query(insertQuery, [name, purchaseDate, consumptionPeriod]);
+      res.status(201).send(`New item ${name} added successfully.`);
+    } catch (error) {
+      console.error('Error adding new item:', error);
+      res.status(500).send('Error adding new item');
     }
   });
 
