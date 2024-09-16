@@ -1,9 +1,9 @@
 services:
   database:
-    image: postgres:alpine
+      image: postgres:alpine
     container_name: "hack-u"
     environment:
-      POSTGRES_USER: "user"
+          POSTGRES_USER: "user"
       POSTGRES_PASSWORD: "password"
       POSTGRES_DB: "DB"
     volumes:  
