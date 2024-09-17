@@ -23,26 +23,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
   
 // 商品名照会
-app.post('/add-item', async (req, res) => {
-  //フロントエンドから商品名を取得
-  const { name } = req.body;
+app.post('/api/yahoo-product', async (req, res) => {
+  //フロントエンドからbarcodeを取得
+  const { code } = req.body;
   //今日の日付を取得
   const purchaseDate = getCurrentDate();
   try {
     // データベース内で商品名が一致するか確認
-    const selectQuery = 'SELECT * FROM item WHERE name = $1';
-    const result = await pool.query(selectQuery, [name]);
+    const selectQuery = 'SELECT * FROM item WHERE code = $1';
+    const result = await pool.query(selectQuery, [code]);
     if (result.rows.length > 0) {
       //商品名が一致する場合、puechaseDateを更新
       //PostgreSQLはカラム名を全て小文字として返すため、consumptionperiodは小文字にする。
       const consumptionPeriod = result.rows[0].consumptionperiod;
       const futurePurchaseDate = getFuturePurchaseDate(purchaseDate, consumptionPeriod);  
-      const updateQuery = 'UPDATE item SET purchaseDate = $1, FuturePurchaseDate = $2 WHERE name = $3';
-      await pool.query(updateQuery, [purchaseDate, futurePurchaseDate, name]);
-      res.status(200).send(`Product ${name} updated successfully with new purchase date and future purchase date.`);
+      const updateQuery = 'UPDATE item SET purchaseDate = $1, FuturePurchaseDate = $2 WHERE code = $3';
+      await pool.query(updateQuery, [purchaseDate, futurePurchaseDate, code]);
+      res.status(200).send(`Product ${code} updated successfully with new purchase date and future purchase date.`);
+      name: result.rows[0].name //フロントエンドに商品名を返す
     } else {
-      res.status(404).send(`No matching product found for name: ${name}`);
-      name: name //フロントエンドに商品名を返す
+      res.status(404).send(`No matching product found for code: ${code}`);
+      code: code //フロントエンドにbarcodeを返す
     }
   } catch (error) {
     console.error('Error processing item:', error);
@@ -53,15 +54,15 @@ app.post('/add-item', async (req, res) => {
 //商品をDBに追加
 app.post('/add-new-item', async (req, res) => {
     // フロントエンドから商品名、期限を取得
-    const { name, consumptionPeriod } = req.body;
+    const { name, code, consumptionPeriod } = req.body;
     // 今日の日付を取得
     const purchaseDate = getCurrentDate();
     // 今日の日付を取得
     const futurePurchaseDate = getFuturePurchaseDate(purchaseDate, consumptionPeriod);
     try {
       // 新しい商品情報をDBに追加するクエリ
-      const insertQuery = 'INSERT INTO item (name, purchaseDate, consumptionPeriod, FuturePurchaseDate) VALUES ($1, $2, $3, $4) RETURNING *';
-      const value = [name, purchaseDate, consumptionPeriod, futurePurchaseDate];
+      const insertQuery = 'INSERT INTO item (name, code, purchaseDate, consumptionPeriod, FuturePurchaseDate) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+      const value = [name, code, purchaseDate, consumptionPeriod, futurePurchaseDate];
       const result = await pool.query(insertQuery, value);
       res.status(201).send(`New item ${name} added successfully.`);
     } catch (error) {
@@ -100,7 +101,7 @@ function getCurrentDate() {
 function getFuturePurchaseDate(purchaseDate, consumptionPeriod) {
   const date = new Date(purchaseDate);
   // 消費期間を加算する
-  date.setDate(date.getDate() + consumptionPeriod);
+  date.setDate(date.getDate() + consumptionPeriod - 1);
     
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0'); // 月は0始まりのため +1
