@@ -1,10 +1,12 @@
--- Create the item table
-CREATE TABLE IF NOT EXISTS item (
+-- -- Create the item table
+DROP TABLE IF EXISTS item;
+CREATE TABLE item (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    purchaseDate DATE,
-    consumptionPeriod INT --単位未定
+    purchaseDate DATE NOT NULL,
+    consumptionPeriod INT NOT NULL --単位未定
 );
+
 
 -- Insert some sample data into item
 INSERT INTO item (name, purchaseDate, consumptionPeriod)
