@@ -70,6 +70,23 @@ app.post('/add-new-item', async (req, res) => {
     }
   });
 
+//DBのFuturePurchaseDateと一致する商品をフロントエンドに送信
+app.get('/check-future-date', async (req, res) => {
+  // 今日の日付を取得
+  const todayDate = getCurrentDate();
+  try {
+    // FuturePurchaseDateが今日の日付と一致する商品名を取得
+    const query = 'SELECT name FROM item WHERE FuturePurchaseDate = $1';
+    const result = await pool.query(query, [todayDate]);
+    const matchingNames = result.rows.map(row => row.name);
+    res.status(200).json({ matchingNames: matchingNames });
+  } catch (error) {
+    console.error('Error checking future purchase date:', error);
+    res.status(500).send('Error checking future purchase date');
+  }
+});
+
+
 //今日の日付をYYYY-MM-DDの形で取得
 function getCurrentDate() {
     const today = new Date();
