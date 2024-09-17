@@ -1,5 +1,5 @@
 import './App.css';
-import Memo from './/memo';
+import Main from './/main';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 
@@ -7,7 +7,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Memo />} />
+        <Route path="/" element={<Main />} />
        </Routes>
     </Router>
   );
