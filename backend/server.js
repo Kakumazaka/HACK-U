@@ -168,7 +168,7 @@ app.post('/api/saveitem', async (req, res) => {
 });
 
 //DBのFuturePurchaseDateと一致する商品をフロントエンドに送信
-app.get('/check-future-date', async (req, res) => {
+app.get('/api/add-memo', async (req, res) => {
   // 今日の日付を取得
   const todayDate = getCurrentDate();
   try {
