@@ -224,8 +224,8 @@ function Main() {
     return (
       <div>
         <h2>{detectedProduct.name}</h2>
-        <p>Price: {detectedProduct.price}</p>
-        <img src={detectedProduct.image.medium} alt={detectedProduct.name} />
+        {/* <p>Price: {detectedProduct.price}</p>
+        <img src={detectedProduct.image.medium} alt={detectedProduct.name} /> */}
       </div>
     );
   };
