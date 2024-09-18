@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // 商品名照会
-app.post('/api/yahoo-product', async (req, res) => {
+app.post('/api/serchitem', async (req, res) => {
   //フロントエンドからbarcodeを取得
   const { code } = req.body;
   //今日の日付を取得
@@ -92,7 +92,7 @@ app.post('/api/yahoo-serch', async (req, res) => {
 })
 
 //商品をDBに追加
-app.post('/add-new-item', async (req, res) => {
+app.post('/api/saveitem', async (req, res) => {
   // フロントエンドから商品名、期限を取得
   const { name, code, consumptionPeriod } = req.body;
   // 今日の日付を取得
