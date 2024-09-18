@@ -44,6 +44,39 @@ function Main() {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    // Webアプリ起動時にサーバーから消費期間経過したカテゴリ名を取得し、メモに追加する
+    const addProductToMemoOnStartup = () => {
+      fetch('http://localhost:5000/api/add-memo', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json(); // カテゴリ情報をJSON形式で取得
+        } else {
+          throw new Error('カテゴリの取得に失敗しました');
+        }
+      })
+      .then((data) => {
+        const categoryNames = data.categories; // サーバーからのカテゴリ名リストを取得
+        if (categoryNames && categoryNames.length > 0) {
+          // 各カテゴリ名をメモに追加
+          const newMemos = [...memos];
+          categoryNames.forEach((categoryName) => {
+            newMemos.push({ id: Date.now(), content: categoryName });
+          });
+          setMemos(newMemos); // メモに保存
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching categories on startup:', error);
+      });
+    };
+
+    addProductToMemoOnStartup();
+
     if (isQuaggaRunning) {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then((stream) => {
