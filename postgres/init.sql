@@ -14,4 +14,5 @@ CREATE TABLE item (
 INSERT INTO item (name, code, purchaseDate, consumptionPeriod, FuturePurchaseDate)
 VALUES
 ('Milk', '1111', '2024-09-01', 7,'2024-09-07'),
-('Bread', '1212', '2024-09-02', 3, '2024-09-04');
+('Bread', '1212', '2024-09-02', 3, '2024-09-04'),
+('歯間ブラシ', '4987072025895', '2024-09-02', 3, '2024-09-04');
