@@ -73,7 +73,7 @@ function Main() {
             }
             Quagga.start();
             console.log("Initializatino Finished!!");
-            
+
             Quagga.onProcessed(result => {
               if (!result || typeof result !== "object" || !result.boxes) return;
               const ctx = Quagga.canvas.ctx.overlay;
@@ -88,7 +88,8 @@ function Main() {
               // console.log("Barcode detected: ", data.codeResult.code);
               console.log("Barcode detected: ", data);
               //setBarcode(data.codeResult.code); // 検出されたバーコードのデータを状態に保存
-              fetchProductFromYahoo(barcode); // Yahoo APIにリクエストを送信
+              fetchProductFromServer(barcode); // Yahoo APIにリクエストを送信
+              stopQuagga();
             });
           });
         })
@@ -120,35 +121,100 @@ function Main() {
     setIsQuaggaRunning(false); // isQuaggaRunning を false に設定して QuaggaJS を停止
   };
 
-  const fetchProductFromYahoo = (barcode) => {
-    fetch('http://localhost:3001/api/yahoo-product', {
+  //バーコード情報をサーバーに送って買ったことがあるかを確認
+  //あったらメモからそのアイテムを消す
+  //無かったらユーザーが期間を入力してapi/saveitemの方でサーバーにカテゴリ，期間，コードを送る
+  const fetchProductFromServer = (barcode) => {
+    fetch('http://localhost:5000/api/searchitem', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ barcode })
+      body: JSON.stringify({ code: barcode }),
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Yahoo API Response:', data);
-  
-        if (data.totalResultsReturned > 0) {
-          const product = data.hits[0];
-          setDetectedProduct(product);
-        } else {
-          setDetectedProduct(null);
+      .then((response) => {
+        if (response.status === 200) {
+          // 商品が見つかった場合
+          return response.json().then((data) => {
+            const categoryName = data.category; // カテゴリの名前を取得
+            console.log('商品が見つかりました:', categoryName);
+
+            // メモから同じ名前のアイテムを削除
+            setMemos((prevMemos) => prevMemos.filter((memo) => memo.content !== categoryName));
+
+            // 検出された商品の情報を保存
+            setDetectedProduct({
+              category: categoryName,
+              found: true,
+            });
+          });
+        } else if (response.status === 201) {
+          // 商品が見つからなかった場合
+          return response.json().then((data) => {
+            const categoryName = data.category; // カテゴリの名前
+            console.log('商品が見つかりませんでした:', categoryName, 'バーコード:', barcode);
+
+            // 商品が見つからなかった場合に検出された情報を保存
+            setDetectedProduct({
+              barcode: barcode,
+              category: categoryName,
+              found: false,
+            });
+
+            // ユーザーに消費期間を入力してもらう
+            // この場合、ダイアログを表示するなどのUI処理が必要です
+            promptUserForConsumptionPeriod(categoryName, barcode);
+          });
+        } else if (response.status === 404) {
+          // エラーが発生した場合
+          console.error('商品が見つかりませんでした。エラーコード:', response.status);
+          setDetectedProduct(null); // エラーハンドリングとして商品情報をクリア
         }
       })
-      .catch(error => {
-        console.error('Error fetching product from Yahoo:', error);
-        setDetectedProduct(null);
+      .catch((error) => {
+        console.error('サーバーから商品情報を取得中にエラーが発生しました:', error);
+        setDetectedProduct(null); // エラーハンドリングとして商品情報をクリア
       });
   };
-  
 
+  // ユーザーに消費期間を入力してもらうための関数
+  const promptUserForConsumptionPeriod = (categoryName, barcode) => {
+    const period = prompt('この商品に対する消費期間を入力してください（例: 30日）');
 
+    if (period) {
+      // 入力がある場合は sendConsumptionPeriod を呼び出してサーバーに送信
+      sendConsumptionPeriod(categoryName, barcode, period);
+    } else {
+      console.log('消費期間が入力されませんでした');
+    }
+  };
 
-
+  // 後で消費期間を送信する関数
+  const sendConsumptionPeriod = () => {
+    if (detectedProduct && !detectedProduct.found && detectedProduct.consumptionPeriod) {
+      // 消費期間が保存されていて、商品が見つからなかった場合のみサーバーに送信
+      fetch('http://localhost:5000/api/saveitem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          barcode: detectedProduct.barcode,
+          category: detectedProduct.category,
+          consumptionPeriod: detectedProduct.consumptionPeriod
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('サーバーに保存されました:', data);
+        })
+        .catch(error => {
+          console.error('サーバーへの保存エラー:', error);
+        });
+    } else {
+      console.log('送信する消費期間が見つかりません。');
+    }
+  };
 
   // 検出された商品情報を表示する
   const displayProduct = () => {
@@ -168,31 +234,31 @@ function Main() {
     <div>
       {/* メモ機能始まり--------------------------------------------------- */}
       <h1>メモ管理</h1>
-      <input 
-        type="text" 
-        value={newMemo} 
-        onChange={(e) => setNewMemo(e.target.value)} 
-        placeholder="メモを入力してください" 
+      <input
+        type="text"
+        value={newMemo}
+        onChange={(e) => setNewMemo(e.target.value)}
+        placeholder="メモを入力してください"
       />
       <button onClick={addMemo}>メモを追加</button>
 
       <ul>
         {memos.map((memo) => (
           <li key={memo.id}>
-            <input 
-              type="text" 
-              value={memo.content} 
-              onChange={(e) => editMemo(memo.id, e.target.value)} 
+            <input
+              type="text"
+              value={memo.content}
+              onChange={(e) => editMemo(memo.id, e.target.value)}
             />
             <button onClick={() => deleteMemo(memo.id)}>削除</button>
           </li>
         ))}
       </ul>
       {/* メモ機能終わり--------------------------------------------------- */}
-        
+
       {/* バーコード読み取り機能始まり------------------------------------ */}
       <div id="my_container">
-		    <div id="my_inner">
+        <div id="my_inner">
           <div>= QuaggaJS =</div>
           <div>
             <button id="my_start" onClick={startQuagga}>Start</button>
@@ -200,19 +266,19 @@ function Main() {
           </div>
           <div id="my_quagga">
             <video ref={videoRef} style={{ width: '100%', height: '100%' }}
-            autoPlay
-            muted>
+              autoPlay
+              muted>
             </video>
             <canvas className="overlay"></canvas>
           </div>
-        
+
           <div id="my_result">***</div>
           <div id="my_barcode">
             <div>***</div>
           </div>
-		    </div>
+        </div>
         {displayProduct()}
-	    </div>
+      </div>
 
       {/* バーコード読み取り機能終わり------------------------------------ */}
 

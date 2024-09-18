@@ -4,6 +4,8 @@ const app = express();
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const PORT = 5000;
+const cors = require('cors');
+app.use(cors());
 
 //サーバー起動
 app.listen(PORT, () => {
@@ -24,7 +26,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // 商品名照会
-app.post('/api/serchitem', async (req, res) => {
+app.post('/api/searchitem', async (req, res) => {
   //フロントエンドからbarcodeを取得
   const { code } = req.body;
   //今日の日付を取得
