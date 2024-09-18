@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // 商品名照会
-app.post('/api/yahoo-product', async (req, res) => {
+app.post('/api/serchitem', async (req, res) => {
   //フロントエンドからbarcodeを取得
   const { code } = req.body;
   //今日の日付を取得
@@ -40,11 +40,28 @@ app.post('/api/yahoo-product', async (req, res) => {
       const futurePurchaseDate = getFuturePurchaseDate(purchaseDate, consumptionPeriod);
       const updateQuery = 'UPDATE item SET purchaseDate = $1, FuturePurchaseDate = $2 WHERE code = $3';
       await pool.query(updateQuery, [purchaseDate, futurePurchaseDate, code]);
-      res.status(200).send(`Product ${code} updated successfully with new purchase date and future purchase date.`);
-      name: result.rows[0].name //フロントエンドに商品名を返す
+      res.status(200).json({
+        message: `Product ${code} updated successfully with new purchase date and future purchase date.`,
+        name: result.rows[0].name,
+        code: code
+      });
     } else {
-      res.status(404).send(`No matching product found for code: ${code}`);
-      code: code //フロントエンドにbarcodeを返す
+      try {
+        const result = await yahooSerch(code);
+        res.status(201).json({
+          message:"Yahoo API success",
+          name: result.category,
+          code:code
+        });
+      } catch (error) {
+        if (error.message === '該当するアイテムが見つかりません') {
+          // 特定のエラーメッセージに応じた処理
+          res.status(404).json({ message: error.message });  // 404 Not Foundとして返す
+        } else {
+          // 他のエラーの場合
+          res.status(500).json({ message: 'エラーが発生しました', error: error.message });
+        }
+      }
     }
   } catch (error) {
     console.error('Error processing item:', error);
@@ -52,12 +69,12 @@ app.post('/api/yahoo-product', async (req, res) => {
   }
 });
 
-app.post('/api/yahoo-serch', async (req, res) => {
+async function yahooSerch(barcode) {
   // APIのエンドポイントURL
   const apiUrl = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
   const appId = process.env.YAHOO_APP_ID;
   // クエリパラメータをURLに追加
-  const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${req.body.barcode}&results=1`;
+  const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${barcode}&results=1`;
 
   try {
     // APIリクエストの送信
@@ -65,7 +82,7 @@ app.post('/api/yahoo-serch', async (req, res) => {
 
     // レスポンスが正常かどうかを確認
     if (!response.ok) {
-      throw new Error('ネットワークに問題があります: ' + response.status);
+      throw new Error('Yahoo API error: ' + response.status);
     }
 
     // レスポンスのJSONデータを取得
@@ -74,25 +91,64 @@ app.post('/api/yahoo-serch', async (req, res) => {
     if (data.totalResultsAvailable) {
       // 必要なデータだけを抽出
       const filteredData = data.hits.length > 0 ? {
-        name: data.hits[0].name,
-        category: data.hits[0].genreCategory.name
+        category: data.hits[0].genreCategory.name,
+        code: barcode
       } : null;
 
       console.log(filteredData);
       // クライアントにデータを返す
-      res.status(200).json(filteredData);
+      return filteredData;
     } else {
-      res.status(404).json('I dont have that');
+      throw new Error('該当するアイテムが見つかりません');
     }
   } catch (error) {
     // エラーが発生した場合、エラーメッセージをクライアントに返す
     console.error('エラーが発生しました:', error);
-    res.status(500).json({ message: 'エラーが発生しました', error: error.message });
+    throw error;
   }
-})
+}
+
+// app.post('/api/yahoo-serch', async (req, res) => {
+//   // APIのエンドポイントURL
+//   const apiUrl = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
+//   const appId = process.env.YAHOO_APP_ID;
+//   // クエリパラメータをURLに追加
+//   const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${req.body.barcode}&results=1`;
+
+//   try {
+//     // APIリクエストの送信
+//     const response = await fetch(urlWithParams);
+
+//     // レスポンスが正常かどうかを確認
+//     if (!response.ok) {
+//       throw new Error('ネットワークに問題があります: ' + response.status);
+//     }
+
+//     // レスポンスのJSONデータを取得
+//     const data = await response.json();
+
+//     if (data.totalResultsAvailable) {
+//       // 必要なデータだけを抽出
+//       const filteredData = data.hits.length > 0 ? {
+//         name: data.hits[0].name,
+//         category: data.hits[0].genreCategory.name
+//       } : null;
+
+//       console.log(filteredData);
+//       // クライアントにデータを返す
+//       res.status(200).json(filteredData);
+//     } else {
+//       res.status(404).json('I dont have that');
+//     }
+//   } catch (error) {
+//     // エラーが発生した場合、エラーメッセージをクライアントに返す
+//     console.error('エラーが発生しました:', error);
+//     res.status(500).json({ message: 'エラーが発生しました', error: error.message });
+//   }
+// })
 
 //商品をDBに追加
-app.post('/add-new-item', async (req, res) => {
+app.post('/api/saveitem', async (req, res) => {
   // フロントエンドから商品名、期限を取得
   const { name, code, consumptionPeriod } = req.body;
   // 今日の日付を取得
@@ -117,7 +173,7 @@ app.get('/check-future-date', async (req, res) => {
   const todayDate = getCurrentDate();
   try {
     // FuturePurchaseDateが今日の日付と一致する商品名を取得
-    const query = 'SELECT name FROM item WHERE FuturePurchaseDate = $1';
+    const query = 'SELECT name FROM item WHERE FuturePurchaseDate < $1';
     const result = await pool.query(query, [todayDate]);
     const matchingNames = result.rows.map(row => row.name);
     res.status(200).json({ matchingNames: matchingNames });
