@@ -21,3 +21,8 @@ Dockerのvolumeを確認
 Dockerのvolumeの削除
     docker volume rm [ボリューム名]
 
+コンテナの実行環境に移動(VSCodeでDockerのDBを操作できる)
+    docker exec -it hack-u psql -U user -d DB
+
+Dockerのログの確認(エラーを確認する時に使う)
+    docker logs hack-u
