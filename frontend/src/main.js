@@ -73,7 +73,7 @@ function Main() {
             }
             Quagga.start();
             console.log("Initializatino Finished!!");
-            
+
             Quagga.onProcessed(result => {
               if (!result || typeof result !== "object" || !result.boxes) return;
               const ctx = Quagga.canvas.ctx.overlay;
@@ -89,6 +89,7 @@ function Main() {
               console.log("Barcode detected: ", data);
               //setBarcode(data.codeResult.code); // 検出されたバーコードのデータを状態に保存
               fetchProductFromServer(barcode); // Yahoo APIにリクエストを送信
+              stopQuagga();
             });
           });
         })
@@ -129,7 +130,7 @@ function Main() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ barcode }),
+      body: JSON.stringify({ code: barcode }),
     })
       .then((response) => {
         if (response.status === 200) {
@@ -137,10 +138,10 @@ function Main() {
           return response.json().then((data) => {
             const categoryName = data.category; // カテゴリの名前を取得
             console.log('商品が見つかりました:', categoryName);
-  
+
             // メモから同じ名前のアイテムを削除
             setMemos((prevMemos) => prevMemos.filter((memo) => memo.content !== categoryName));
-  
+
             // 検出された商品の情報を保存
             setDetectedProduct({
               category: categoryName,
@@ -152,7 +153,7 @@ function Main() {
           return response.json().then((data) => {
             const categoryName = data.category; // カテゴリの名前
             console.log('商品が見つかりませんでした:', categoryName, 'バーコード:', barcode);
-  
+
             // 商品が見つからなかった場合に検出された情報を保存
             setDetectedProduct({
               barcode: barcode,
@@ -175,11 +176,11 @@ function Main() {
         setDetectedProduct(null); // エラーハンドリングとして商品情報をクリア
       });
   };
-  
+
   // ユーザーに消費期間を入力してもらうための関数
   const promptUserForConsumptionPeriod = (categoryName, barcode) => {
     const period = prompt('この商品に対する消費期間を入力してください（例: 30日）');
-    
+
     if (period) {
       // 入力がある場合は sendConsumptionPeriod を呼び出してサーバーに送信
       sendConsumptionPeriod(categoryName, barcode, period);
@@ -233,31 +234,31 @@ function Main() {
     <div>
       {/* メモ機能始まり--------------------------------------------------- */}
       <h1>メモ管理</h1>
-      <input 
-        type="text" 
-        value={newMemo} 
-        onChange={(e) => setNewMemo(e.target.value)} 
-        placeholder="メモを入力してください" 
+      <input
+        type="text"
+        value={newMemo}
+        onChange={(e) => setNewMemo(e.target.value)}
+        placeholder="メモを入力してください"
       />
       <button onClick={addMemo}>メモを追加</button>
 
       <ul>
         {memos.map((memo) => (
           <li key={memo.id}>
-            <input 
-              type="text" 
-              value={memo.content} 
-              onChange={(e) => editMemo(memo.id, e.target.value)} 
+            <input
+              type="text"
+              value={memo.content}
+              onChange={(e) => editMemo(memo.id, e.target.value)}
             />
             <button onClick={() => deleteMemo(memo.id)}>削除</button>
           </li>
         ))}
       </ul>
       {/* メモ機能終わり--------------------------------------------------- */}
-        
+
       {/* バーコード読み取り機能始まり------------------------------------ */}
       <div id="my_container">
-		    <div id="my_inner">
+        <div id="my_inner">
           <div>= QuaggaJS =</div>
           <div>
             <button id="my_start" onClick={startQuagga}>Start</button>
@@ -265,19 +266,19 @@ function Main() {
           </div>
           <div id="my_quagga">
             <video ref={videoRef} style={{ width: '100%', height: '100%' }}
-            autoPlay
-            muted>
+              autoPlay
+              muted>
             </video>
             <canvas className="overlay"></canvas>
           </div>
-        
+
           <div id="my_result">***</div>
           <div id="my_barcode">
             <div>***</div>
           </div>
-		    </div>
+        </div>
         {displayProduct()}
-	    </div>
+      </div>
 
       {/* バーコード読み取り機能終わり------------------------------------ */}
 
