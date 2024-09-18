@@ -108,44 +108,44 @@ async function yahooSerch(barcode) {
   }
 }
 
-app.post('/api/yahoo-serch', async (req, res) => {
-  // APIのエンドポイントURL
-  const apiUrl = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
-  const appId = process.env.YAHOO_APP_ID;
-  // クエリパラメータをURLに追加
-  const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${req.body.barcode}&results=1`;
+// app.post('/api/yahoo-serch', async (req, res) => {
+//   // APIのエンドポイントURL
+//   const apiUrl = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
+//   const appId = process.env.YAHOO_APP_ID;
+//   // クエリパラメータをURLに追加
+//   const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${req.body.barcode}&results=1`;
 
-  try {
-    // APIリクエストの送信
-    const response = await fetch(urlWithParams);
+//   try {
+//     // APIリクエストの送信
+//     const response = await fetch(urlWithParams);
 
-    // レスポンスが正常かどうかを確認
-    if (!response.ok) {
-      throw new Error('ネットワークに問題があります: ' + response.status);
-    }
+//     // レスポンスが正常かどうかを確認
+//     if (!response.ok) {
+//       throw new Error('ネットワークに問題があります: ' + response.status);
+//     }
 
-    // レスポンスのJSONデータを取得
-    const data = await response.json();
+//     // レスポンスのJSONデータを取得
+//     const data = await response.json();
 
-    if (data.totalResultsAvailable) {
-      // 必要なデータだけを抽出
-      const filteredData = data.hits.length > 0 ? {
-        name: data.hits[0].name,
-        category: data.hits[0].genreCategory.name
-      } : null;
+//     if (data.totalResultsAvailable) {
+//       // 必要なデータだけを抽出
+//       const filteredData = data.hits.length > 0 ? {
+//         name: data.hits[0].name,
+//         category: data.hits[0].genreCategory.name
+//       } : null;
 
-      console.log(filteredData);
-      // クライアントにデータを返す
-      res.status(200).json(filteredData);
-    } else {
-      res.status(404).json('I dont have that');
-    }
-  } catch (error) {
-    // エラーが発生した場合、エラーメッセージをクライアントに返す
-    console.error('エラーが発生しました:', error);
-    res.status(500).json({ message: 'エラーが発生しました', error: error.message });
-  }
-})
+//       console.log(filteredData);
+//       // クライアントにデータを返す
+//       res.status(200).json(filteredData);
+//     } else {
+//       res.status(404).json('I dont have that');
+//     }
+//   } catch (error) {
+//     // エラーが発生した場合、エラーメッセージをクライアントに返す
+//     console.error('エラーが発生しました:', error);
+//     res.status(500).json({ message: 'エラーが発生しました', error: error.message });
+//   }
+// })
 
 //商品をDBに追加
 app.post('/api/saveitem', async (req, res) => {
@@ -173,7 +173,7 @@ app.get('/check-future-date', async (req, res) => {
   const todayDate = getCurrentDate();
   try {
     // FuturePurchaseDateが今日の日付と一致する商品名を取得
-    const query = 'SELECT name FROM item WHERE FuturePurchaseDate = $1';
+    const query = 'SELECT name FROM item WHERE FuturePurchaseDate < $1';
     const result = await pool.query(query, [todayDate]);
     const matchingNames = result.rows.map(row => row.name);
     res.status(200).json({ matchingNames: matchingNames });
