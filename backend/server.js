@@ -44,7 +44,7 @@ app.post('/api/searchitem', async (req, res) => {
       await pool.query(updateQuery, [purchaseDate, futurePurchaseDate, code]);
       res.status(200).json({
         message: `Product ${code} updated successfully with new purchase date and future purchase date.`,
-        name: result.rows[0].name,
+        category: result.rows[0].category,
         code: code
       });
     } else {
@@ -52,7 +52,7 @@ app.post('/api/searchitem', async (req, res) => {
         const result = await yahooSerch(code);
         res.status(201).json({
           message:"Yahoo API success",
-          name: result.category,
+          category: result.category,
           code:code
         });
       } catch (error) {
@@ -93,7 +93,7 @@ async function yahooSerch(barcode) {
     if (data.totalResultsAvailable) {
       // 必要なデータだけを抽出
       const filteredData = data.hits.length > 0 ? {
-        category: data.hits[0].genreCategory.name,
+        category: data.hits[0].genreCategory.category,
         code: barcode
       } : null;
 
@@ -113,17 +113,17 @@ async function yahooSerch(barcode) {
 //商品をDBに追加
 app.post('/api/saveitem', async (req, res) => {
   // フロントエンドから商品名、期限を取得
-  const { name, code, consumptionPeriod } = req.body;
+  const { category, code, consumptionPeriod } = req.body;
   // 今日の日付を取得
   const purchaseDate = getCurrentDate();
   // 今日の日付を取得
   const futurePurchaseDate = getFuturePurchaseDate(purchaseDate, consumptionPeriod);
   try {
     // 新しい商品情報をDBに追加するクエリ
-    const insertQuery = 'INSERT INTO item (name, code, purchaseDate, consumptionPeriod, FuturePurchaseDate) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-    const value = [name, code, purchaseDate, consumptionPeriod, futurePurchaseDate];
+    const insertQuery = 'INSERT INTO item (category, code, purchaseDate, consumptionPeriod, FuturePurchaseDate) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+    const value = [category, code, purchaseDate, consumptionPeriod, futurePurchaseDate];
     const result = await pool.query(insertQuery, value);
-    res.status(201).send(`New item ${name} added successfully.`);
+    res.status(201).send(`New item ${category} added successfully.`);
   } catch (error) {
     console.error('Error adding new item:', error);
     res.status(500).send('Error adding new item');
@@ -136,10 +136,10 @@ app.get('/api/add-memo', async (req, res) => {
   const todayDate = getCurrentDate();
   try {
     // FuturePurchaseDateが今日の日付と一致する商品名を取得
-    const query = 'SELECT name FROM item WHERE FuturePurchaseDate <= $1';
+    const query = 'SELECT category FROM item WHERE FuturePurchaseDate <= $1';
     const result = await pool.query(query, [todayDate]);
-    const matchingNames = result.rows.map(row => row.name);
-    res.status(200).json({ matchingNames: matchingNames });
+    const categories = result.rows.map(row => row.category);
+    res.status(200).json({ categories: categories });
   } catch (error) {
     console.error('Error checking future purchase date:', error);
     res.status(500).send('Error checking future purchase date');
