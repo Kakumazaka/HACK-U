@@ -17,6 +17,10 @@ function Main() {
     localStorage.setItem('memos', JSON.stringify(memos));
   }, [memos]);
 
+  const clearMemos = () => {
+    localStorage.removeItem('memos'); // localStorageから削除
+    setMemos([]); // 状態もクリア
+  };
 
   const addMemo = () => {
     if (newMemo.trim() !== '') {
@@ -184,8 +188,8 @@ function Main() {
         } else if (response.status === 201) {
           // 商品が見つからなかった場合
           return response.json().then((data) => {
-            console.log(data);
-            const categoryName = data.name; // カテゴリの名前
+            console.log('data:', data);
+            const categoryName = data.category; // カテゴリの名前
             console.log('商品が見つかりませんでした:', categoryName, 'バーコード:', barcode);
 
             // 商品が見つからなかった場合に検出された情報を保存
@@ -224,9 +228,6 @@ function Main() {
 
   // 後で消費期間を送信する関数
   const sendConsumptionPeriod = (categoryName, barcode, period) => {
-    console.log('categoryName:', categoryName);
-    console.log('barcode:', barcode);
-    console.log('period:', period);
     if (categoryName && barcode && period) {
       // 消費期間が保存されていて、商品が見つからなかった場合のみサーバーに送信
       fetch('http://localhost:5000/api/saveitem', {
@@ -235,7 +236,7 @@ function Main() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          barcode: barcode,
+          code: barcode,
           category: categoryName,
           consumptionPeriod: period
         })
@@ -311,6 +312,7 @@ function Main() {
             <div>***</div>
           </div>
         </div>
+        <button onClick={clearMemos}>Clear All Memos</button>
         {displayProduct()}
       </div>
 

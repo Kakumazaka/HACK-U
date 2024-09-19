@@ -51,7 +51,8 @@ app.post('/api/searchitem', async (req, res) => {
     } else {//一致する商品名がない場合
       try {
         console.log("connecting Yahoo API");
-        const result = await yahooSerch(code);
+        const result = await yahooSearch(code);
+        console.log('result:', result);
         res.status(201).json({
           message:"Yahoo API success",
           category: result.category,
@@ -74,12 +75,12 @@ app.post('/api/searchitem', async (req, res) => {
   }
 });
 
-async function yahooSerch(barcode) {
+async function yahooSearch(code) {
   // APIのエンドポイントURL
   const apiUrl = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
   const appId = process.env.YAHOO_APP_ID;
   // クエリパラメータをURLに追加
-  const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${barcode}&results=1`;
+  const urlWithParams = `${apiUrl}?appid=${appId}&jan_code=${code}&results=1`;
 
   try {
     // APIリクエストの送信
@@ -96,11 +97,11 @@ async function yahooSerch(barcode) {
     if (data.totalResultsAvailable) {
       // 必要なデータだけを抽出
       const filteredData = data.hits.length > 0 ? {
-        category: data.hits[0].genreCategory.category,
-        code: barcode
+        category: data.hits[0].genreCategory.name,
+        code: code
       } : null;
 
-      console.log(filteredData);
+      console.log('filteredData', filteredData);
       // クライアントにデータを返す
       return filteredData;
     } else {
@@ -119,10 +120,7 @@ app.post('/api/saveitem', async (req, res) => {
 
   
   const { code, category, consumptionPeriod } = req.body;
-  // console.log(req.body);
-  // console.log(code, category, consumptionPeriod);
-  // console.log("あああああああああああああああああああああああああああああああああ");
-  
+  console.log('received from sever: ', req);
   // 今日の日付を取得
   const purchaseDate = getCurrentDate();
   // 今日の日付を取得
