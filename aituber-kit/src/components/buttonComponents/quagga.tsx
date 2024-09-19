@@ -5,7 +5,8 @@ import styles from './custom.module.css';
 
 // QuaggaScannerコンポーネントのプロパティ型
 interface QuaggaScannerProps {
-  onDetected: (barcode: string) => void;
+  prevMemo: Memo[];
+  updateMemos: (newMemos: Memo[]) => void;
 }
 interface DetectedProduct {
   barcode: string;
@@ -17,13 +18,12 @@ interface Memo {
   content: string;
 }
 
-const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ onDetected }) => {
+const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos }) => {
   const [isQuaggaRunning, setIsQuaggaRunning] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [opened, setOpened] = useState(true)
   // 商品情報を保存する状態を追加
   const [detectedProduct, setDetectedProduct] = useState<DetectedProduct | null>(null);
-  const [memos, setMemos] = useState<Memo[]>([]);
 
   useEffect(() => {
     if (isQuaggaRunning) {
@@ -117,7 +117,7 @@ const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ onDetected }) => {
             console.log('商品が見つかりました:', categoryName);
 
             // メモから同じ名前のアイテムを削除
-            setMemos((prevMemos) => prevMemos.filter((memo) => memo.content !== categoryName));
+            updateMemos(prevMemo.filter((memo) => memo.content !== categoryName));
 
             // 検出された商品の情報を保存
             setDetectedProduct({
