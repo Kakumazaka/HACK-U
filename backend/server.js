@@ -136,7 +136,7 @@ app.get('/api/add-memo', async (req, res) => {
   const todayDate = getCurrentDate();
   try {
     // FuturePurchaseDateが今日の日付と一致する商品名を取得
-    const query = 'SELECT name FROM item WHERE FuturePurchaseDate < $1';
+    const query = 'SELECT name FROM item WHERE FuturePurchaseDate <= $1';
     const result = await pool.query(query, [todayDate]);
     const matchingNames = result.rows.map(row => row.name);
     res.status(200).json({ matchingNames: matchingNames });
