@@ -614,3 +614,181 @@ export const handleReceiveTextFromWsFn =
 
     homeStore.setState({ chatProcessing: state !== 'end' })
   }
+
+  export const handleSendChatFn2 =
+  (errors: {
+    NotConnectedToExternalAssistant: string
+    APIKeyNotEntered: string
+  }) =>
+  async (text: string) => {
+    const newMessage = text
+
+    if (newMessage === null) return
+
+    const ss = settingsStore.getState()
+    const hs = homeStore.getState()
+    const sls = slideStore.getState()
+
+    if (ss.webSocketMode) {
+      // 未メンテなので不具合がある可能性あり
+      console.log('websocket mode: true')
+      homeStore.setState({ chatProcessing: true })
+
+      // WebSocketで送信する処理
+      if (hs.ws?.readyState === WebSocket.OPEN) {
+        // ユーザーの発言を追加して表示
+        const updateLog: Message[] = [
+          ...hs.chatLog,
+          { role: 'system', content: newMessage },
+        ]
+        homeStore.setState({
+          chatLog: updateLog,
+        })
+
+        // WebSocket送信
+        hs.ws.send(JSON.stringify({ content: newMessage, type: 'chat' }))
+      } else {
+        homeStore.setState({
+          assistantMessage: errors['NotConnectedToExternalAssistant'],
+          chatProcessing: false,
+        })
+      }
+    } else {
+      // ChatVRM original mode
+      const emptyKeys = [
+        ss.selectAIService === 'openai' &&
+          !ss.openaiKey &&
+          !process.env.NEXT_PUBLIC_OPEN_AI_KEY,
+
+        ss.selectAIService === 'anthropic' &&
+          !ss.anthropicKey &&
+          !process.env.NEXT_PUBLIC_ANTHROPIC_KEY,
+
+        ss.selectAIService === 'google' &&
+          !ss.googleKey &&
+          !process.env.NEXT_PUBLIC_GOOGLE_KEY,
+
+        ss.selectAIService === 'azure' &&
+          !ss.azureKey &&
+          !process.env.NEXT_PUBLIC_AZURE_KEY,
+
+        ss.selectAIService === 'groq' &&
+          !ss.groqKey &&
+          !process.env.NEXT_PUBLIC_GROQ_KEY,
+
+        ss.selectAIService === 'cohere' &&
+          !ss.cohereKey &&
+          !process.env.NEXT_PUBLIC_COHERE_KEY,
+
+        ss.selectAIService === 'mistralai' &&
+          !ss.mistralaiKey &&
+          !process.env.NEXT_PUBLIC_MISTRALAI_KEY,
+
+        ss.selectAIService === 'perplexity' &&
+          !ss.perplexityKey &&
+          !process.env.NEXT_PUBLIC_PERPLEXITY_KEY,
+
+        ss.selectAIService === 'fireworks' &&
+          !ss.fireworksKey &&
+          !process.env.NEXT_PUBLIC_FIREWORKS_KEY,
+
+        ss.selectAIService === 'dify' &&
+          !ss.difyKey &&
+          !process.env.NEXT_PUBLIC_DIFY_KEY,
+      ]
+      if (emptyKeys.includes(true)) {
+        homeStore.setState({ assistantMessage: errors['APIKeyNotEntered'] })
+        return
+      }
+
+      let systemPrompt = ss.systemPrompt
+      if (ss.slideMode) {
+        if (sls.isPlaying) {
+          return
+        }
+
+        try {
+          let scripts = JSON.stringify(
+            require(
+              `../../../public/slides/${sls.selectedSlideDocs}/scripts.json`
+            )
+          )
+          systemPrompt = systemPrompt.replace('{{SCRIPTS}}', scripts)
+
+          let supplement = ''
+          try {
+            const response = await fetch(
+              `/api/getSupplement?slideDocs=${sls.selectedSlideDocs}`
+            )
+            if (!response.ok) {
+              throw new Error('Failed to fetch supplement')
+            }
+            const data = await response.json()
+            supplement = data.supplement
+            systemPrompt = systemPrompt.replace('{{SUPPLEMENT}}', supplement)
+          } catch (e) {
+            console.error('supplement.txtの読み込みに失敗しました:', e)
+          }
+
+          const answerString = await judgeSlide(newMessage, scripts, supplement)
+          const answer = JSON.parse(answerString)
+          if (answer.judge === 'true' && answer.page !== '') {
+            goToSlide(Number(answer.page))
+            systemPrompt += `\n\nEspecial Page Number is ${answer.page}.`
+          }
+        } catch (e) {
+          console.error(e)
+        }
+      }
+
+      homeStore.setState({ chatProcessing: true })
+      // ユーザーの発言を追加して表示
+      const messageLog: Message[] = [
+        ...hs.chatLog,
+        {
+          role: 'system',
+          content: hs.modalImage
+            ? [
+                { type: 'text', text: newMessage },
+                { type: 'image', image: hs.modalImage },
+              ]
+            : newMessage,
+        },
+      ]
+      if (hs.modalImage) {
+        homeStore.setState({ modalImage: '' })
+      }
+      homeStore.setState({ chatLog: messageLog })
+
+      // TODO: AIに送信するメッセージの加工、処理がひどいので要修正
+      // 画像は直近のものしか送らない
+      const processedMessageLog = messageLog.map((message, index) => ({
+        role: ['assistant', 'user', 'system'].includes(message.role)
+          ? message.role
+          : 'assistant',
+        content:
+          index === messageLog.length - 1
+            ? message.content
+            : Array.isArray(message.content)
+              ? message.content[0].text
+              : message.content,
+      }))
+
+      const messages: Message[] = [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        ...processedMessageLog.slice(-10),
+      ]
+
+      try {
+        await processAIResponse(messageLog, messages)
+      } catch (e) {
+        console.error(e)
+      }
+
+      homeStore.setState({ chatProcessing: false })
+    }
+  }
+

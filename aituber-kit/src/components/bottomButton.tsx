@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { IconButton } from './iconButton'
 import { Form } from './form';
+import { handleSendChatFn2 } from '@/features/chat/handlers';
 import { handleSendChatFn } from '@/features/chat/handlers';
 
 export const BottomButton = () => {
@@ -12,12 +13,42 @@ export const BottomButton = () => {
         NotConnectedToExternalAssistant: t('NotConnectedToExternalAssistant'),
         APIKeyNotEntered: t('APIKeyNotEntered'),
     })
+    const [error, setError] = useState(null);
+
+    // APIのエンドポイント
+    const apiUrl = "http://localhost:5000/check-future-date"
+    const getMemo = async (): Promise<string> => {
+        let message = '以下に買い物メモに書いてあるアイテムを示します。可愛くお願いしてください。'; // message を初期化
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.matchingNames.length > 0) {
+                // アイテムが存在する場合の処理
+                const itemsList = data.matchingNames.map((item: string) => {
+                    return `${item}`;
+                }).join('\n');
+                message += `アイテム一覧:\n${itemsList}\nこれらのアイテムを買ってきてほしいとすべて読み上げたうえでお願いしてください。`;
+            } else {
+                // アイテムが存在しない場合の処理
+                message += 'アイテムがありません。今は買ってほしいものがないと伝えてください。';
+            }
+            return message; // message を戻り値として返す
+        } catch (error) {
+            //setError(error.message); // エラーを状態に保存
+            return ''; // エラー発生時には空文字を返す
+        }
+    };
 
     //memoの表示と読み上げ
-    const showMemo = useCallback(() => {
+    const showMemo = useCallback(async() => {
         if (!showForm) {
+            const memoText = await getMemo();
+            console.log('memo')
             //ここに初期メッセージ
-            handleSendChat("おはよう");
+            handleSendChat(memoText);
         }
         setShowForm(true);
     }, [showForm, handleSendChat])
