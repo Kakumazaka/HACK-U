@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const PORT = 5000;
 const cors = require('cors');
 app.use(cors());
+app.use(express.json());
 
 //サーバー起動
 app.listen(PORT, () => {
@@ -47,14 +48,16 @@ app.post('/api/searchitem', async (req, res) => {
         name: result.rows[0].name,
         code: code
       });
-    } else {
+    } else {//一致する商品名がない場合
       try {
+        console.log("connecting Yahoo API");
         const result = await yahooSerch(code);
         res.status(201).json({
           message:"Yahoo API success",
           name: result.category,
           code:code
         });
+        console.log("Yahoo API success");
       } catch (error) {
         if (error.message === '該当するアイテムが見つかりません') {
           // 特定のエラーメッセージに応じた処理
@@ -113,7 +116,10 @@ async function yahooSerch(barcode) {
 //商品をDBに追加
 app.post('/api/saveitem', async (req, res) => {
   // フロントエンドから商品名、期限を取得
-  const { name, code, consumptionPeriod } = req.body;
+  const { barcode, category, consumptionPeriod } = req.body;
+  // console.log(req.body);
+  // console.log(barcode, category, consumptionPeriod);
+  // console.log("あああああああああああああああああああああああああああああああああ");
   // 今日の日付を取得
   const purchaseDate = getCurrentDate();
   // 今日の日付を取得
@@ -121,9 +127,9 @@ app.post('/api/saveitem', async (req, res) => {
   try {
     // 新しい商品情報をDBに追加するクエリ
     const insertQuery = 'INSERT INTO item (name, code, purchaseDate, consumptionPeriod, FuturePurchaseDate) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-    const value = [name, code, purchaseDate, consumptionPeriod, futurePurchaseDate];
+    const value = [category, barcode, purchaseDate, consumptionPeriod, futurePurchaseDate];
     const result = await pool.query(insertQuery, value);
-    res.status(201).send(`New item ${name} added successfully.`);
+    res.status(201).send(`New item ${category} added successfully.`);
   } catch (error) {
     console.error('Error adding new item:', error);
     res.status(500).send('Error adding new item');

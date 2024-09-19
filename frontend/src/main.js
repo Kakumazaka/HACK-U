@@ -184,7 +184,8 @@ function Main() {
         } else if (response.status === 201) {
           // 商品が見つからなかった場合
           return response.json().then((data) => {
-            const categoryName = data.category; // カテゴリの名前
+            console.log(data);
+            const categoryName = data.name; // カテゴリの名前
             console.log('商品が見つかりませんでした:', categoryName, 'バーコード:', barcode);
 
             // 商品が見つからなかった場合に検出された情報を保存
@@ -212,8 +213,7 @@ function Main() {
 
   // ユーザーに消費期間を入力してもらうための関数
   const promptUserForConsumptionPeriod = (categoryName, barcode) => {
-    const period = prompt('この商品に対する消費期間を入力してください（例: 30日）');
-
+    const period = prompt('この商品に対する消費期間（日数）を半角数字で入力してください（例: 30）');
     if (period) {
       // 入力がある場合は sendConsumptionPeriod を呼び出してサーバーに送信
       sendConsumptionPeriod(categoryName, barcode, period);
@@ -223,8 +223,11 @@ function Main() {
   };
 
   // 後で消費期間を送信する関数
-  const sendConsumptionPeriod = () => {
-    if (detectedProduct && !detectedProduct.found && detectedProduct.consumptionPeriod) {
+  const sendConsumptionPeriod = (categoryName, barcode, period) => {
+    console.log('categoryName:', categoryName);
+    console.log('barcode:', barcode);
+    console.log('period:', period);
+    if (categoryName && barcode && period) {
       // 消費期間が保存されていて、商品が見つからなかった場合のみサーバーに送信
       fetch('http://localhost:5000/api/saveitem', {
         method: 'POST',
@@ -232,9 +235,9 @@ function Main() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          barcode: detectedProduct.barcode,
-          category: detectedProduct.category,
-          consumptionPeriod: detectedProduct.consumptionPeriod
+          barcode: barcode,
+          category: categoryName,
+          consumptionPeriod: period
         })
       })
         .then(response => response.json())
@@ -257,8 +260,6 @@ function Main() {
     return (
       <div>
         <h2>{detectedProduct.name}</h2>
-        {/* <p>Price: {detectedProduct.price}</p>
-        <img src={detectedProduct.image.medium} alt={detectedProduct.name} /> */}
       </div>
     );
   };
