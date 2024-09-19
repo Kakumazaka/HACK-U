@@ -5,6 +5,8 @@ import { IconButton } from './iconButton'
 import { Form } from './form';
 import { handleSendChatFn2 } from '@/features/chat/handlers';
 import { handleSendChatFn } from '@/features/chat/handlers';
+import MemoManager from './buttonComponents/memo';
+import QuaggaScanner from './buttonComponents/quagga';
 
 export const BottomButton = () => {
     const [showForm, setShowForm] = useState(false);
@@ -14,6 +16,8 @@ export const BottomButton = () => {
         APIKeyNotEntered: t('APIKeyNotEntered'),
     })
     const [error, setError] = useState(null);
+    const [view, setView] = useState<'form' | 'memo' | 'quagga'>('form'); // 'form' | 'memo' | 'quagga' で表示を管理
+
 
     // APIのエンドポイント
     const apiUrl = "http://localhost:5000/check-future-date"
@@ -53,13 +57,9 @@ export const BottomButton = () => {
         setShowForm(true);
     }, [showForm, handleSendChat])
     //memo編集画面への遷移
-    const editMemo = () => {
-
-    }
+    const editMemo = () => setView('memo');
     //バーコードの読み取り
-    const readBarCode = () => {
-
-    }
+    const readBarCode = () => setView('quagga');
     const back = () => {
         setShowForm(false);
     }
@@ -119,6 +119,18 @@ export const BottomButton = () => {
                     </div>
                 </div>
             )}
+            {view === 'memo' && <MemoManager memos={[]} addMemo={function (newMemo: string): void {
+                throw new Error('Function not implemented.');
+            } } editMemo={function (id: number, updatedContent: string): void {
+                throw new Error('Function not implemented.');
+            } } deleteMemo={function (id: number): void {
+                throw new Error('Function not implemented.');
+            } } clearMemos={function (): void {
+                throw new Error('Function not implemented.');
+            } } />} 
+            {view === 'quagga' && <QuaggaScanner onDetected={function (barcode: string): void {
+                throw new Error('Function not implemented.');
+            } } />} 
         </>
     );
 };
