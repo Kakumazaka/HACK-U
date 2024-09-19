@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IconButton } from '../iconButton';
+import styles from './custom.module.css';
 
 // メモの型定義
 interface Memo {
@@ -39,7 +40,7 @@ const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, del
                         onChange={(e) => setNewMemo(e.target.value)}
                         placeholder="メモを入力してください"
                     />
-                    <button onClick={() => { addMemo(newMemo); setNewMemo(''); }}>メモを追加</button>
+                    <button id={styles.my_start} onClick={() => { addMemo(newMemo); setNewMemo(''); }}>メモを追加</button>
 
                     <ul>
                         {memos.map((memo) => (
