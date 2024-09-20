@@ -26,7 +26,10 @@ export const BottomButton = () => {
     const [memos, setMemos] = useState<Memo[]>([]);
     const updateMemos = (newMemos: Memo[]) => {
         setMemos(newMemos);
-      };
+    };
+    const updateView = (view: 'form' | 'memo' | 'quagga') => {
+        setView(view);
+    };
 
     useEffect(() => {
         // Webアプリ起動時にサーバーから消費期間経過したカテゴリ名を取得し、メモに追加する
@@ -103,12 +106,6 @@ export const BottomButton = () => {
         setMemos([]);
     };
 
-    const handleBarcodeDetected = (barcode: string) => {
-        console.log('検出されたバーコード:', barcode);
-        // 検出されたバーコードに基づいて何かしらの処理を行う（例: サーバーからデータを取得してメモに追加）
-        addMemo(`検出されたバーコード: ${barcode}`);
-    };
-
     // APIのエンドポイント
     const apiUrl = "http://localhost:5000/api/add-memo"
     const getMemo = async (): Promise<string> => {
@@ -150,18 +147,18 @@ export const BottomButton = () => {
     const showMemo = useCallback(async () => {
         if (!showForm) {
             const memoText = await getMemo();
-            console.log('memoText:',memoText);
+            console.log('memoText:', memoText);
             //ここに初期メッセージ
             handleSendChat(memoText);
         }
         setShowForm(true);
     }, [showForm, handleSendChat])
-        //memo編集画面への遷移
-        const goEditMemo = () => setView('memo');
-        //バーコードの読み取り
-        const readBarCode = () => setView('quagga');
-        const back = () => {
-            setShowForm(false);
+    //memo編集画面への遷移
+    const goEditMemo = () => setView('memo');
+    //バーコードの読み取り
+    const readBarCode = () => setView('quagga');
+    const back = () => {
+        setShowForm(false);
     }
     return (
         <>
@@ -225,8 +222,13 @@ export const BottomButton = () => {
                 editMemo={editMemo}
                 deleteMemo={deleteMemo}
                 clearMemos={clearMemos}
+                updateView={updateView}
             />}
-            {view === 'quagga' && <QuaggaScanner prevMemo={memos} updateMemos = {updateMemos} />}
+            {view === 'quagga' && <QuaggaScanner
+                prevMemo={memos}
+                updateMemos={updateMemos}
+                updateView={updateView}
+            />}
         </>
     );
 };

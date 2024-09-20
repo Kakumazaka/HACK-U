@@ -44,3 +44,12 @@
 	justify-content: space-around;
 	align-items: center;
 }
+
+#my_button {
+	border-radius: 10px; /* 角を丸くする */
+	background-color: #ccc; /* 背景色を灰色にする */
+	border: 2px solid #000; /* 黒い枠線をつける */
+	padding: 2px 5px; /* ボタン内の余白 */
+	cursor: pointer; /* マウスホバー時にカーソルがポインターになる */
+  }
+  
