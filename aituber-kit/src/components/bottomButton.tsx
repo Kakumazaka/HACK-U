@@ -110,18 +110,18 @@ export const BottomButton = () => {
     };
 
     // APIのエンドポイント
-    //const apiUrl = "http://localhost:5000/api/add-memo"
+    const apiUrl = "http://localhost:5000/api/add-memo"
     const getMemo = async (): Promise<string> => {
-        let message = '以下に買い物メモに書いてあるアイテムを示します。可愛くお願いしてください。'; // message を初期化
+        let message = 'あたなたは買い物メモアプリの中にいるユーザー(かいかい)の彼女です';
+        message += '以下に買い物メモに書いてあるアイテムを示します。ユーザー（かいかい）に可愛くお願いしてください。'; // message を初期化
         if (memos.length > 0) {
             message += `アイテム一覧:\n`;
             message += memos.map(memo => memo.content).join(', ');
-            message += `アイテム一覧:\n\nこれらのアイテムを買ってきてほしいとすべて読み上げたうえでお願いしてください。`;
+            message += `\nこれらのアイテムを買ってきてほしいとすべて読み上げたうえでお願いしてください。`;
         } else {
             message += 'メモがありませんでした。今買ってきてほしいものはないことを伝えてください。'
         }
-        console.log('message');
-        return message;
+        console.log("message:", message);
         // try {
         //     const response = await fetch(apiUrl);
         //     if (!response.ok) {
@@ -141,26 +141,27 @@ export const BottomButton = () => {
         //     return message; // message を戻り値として返す
         // } catch (error) {
         //     //setError(error.message); // エラーを状態に保存
-        //     return ''; // エラー発生時には空文字を返す
+        //     return 'エラーだよ'; // エラー発生時には空文字を返す
         // }
+        return message;
     };
 
     //memoの表示と読み上げ
     const showMemo = useCallback(async () => {
         if (!showForm) {
             const memoText = await getMemo();
-            console.log('memo')
+            console.log('memoText:',memoText);
             //ここに初期メッセージ
             handleSendChat(memoText);
         }
         setShowForm(true);
     }, [showForm, handleSendChat])
-    //memo編集画面への遷移
-    const goEditMemo = () => setView('memo');
-    //バーコードの読み取り
-    const readBarCode = () => setView('quagga');
-    const back = () => {
-        setShowForm(false);
+        //memo編集画面への遷移
+        const goEditMemo = () => setView('memo');
+        //バーコードの読み取り
+        const readBarCode = () => setView('quagga');
+        const back = () => {
+            setShowForm(false);
     }
     return (
         <>
