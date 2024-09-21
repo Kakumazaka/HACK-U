@@ -219,8 +219,8 @@ const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos, up
             <div id={styles.my_inner}>
               <div>= QuaggaJS =</div>
               <div>
-                <button id={styles.my_start} onClick={startQuagga}>Start</button>
-                <button id={styles.my_stop} onClick={stopQuagga}>Stop</button>
+                <button id={styles.my_button2} onClick={startQuagga}>Start</button>
+                <button id={styles.my_button2} onClick={stopQuagga}>Stop</button>
               </div>
               <div id={styles.my_quagga}>
                 <video ref={videoRef} style={{ width: '100%', height: '100%' }} autoPlay muted></video>
