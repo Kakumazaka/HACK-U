@@ -7,6 +7,7 @@ import styles from './custom.module.css';
 interface QuaggaScannerProps {
   prevMemo: Memo[];
   updateMemos: (newMemos: Memo[]) => void;
+  updateView: (view: 'form' | 'memo' | 'quagga') => void;
 }
 interface DetectedProduct {
   barcode: string;
@@ -18,7 +19,7 @@ interface Memo {
   content: string;
 }
 
-const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos }) => {
+const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos, updateView }) => {
   const [isQuaggaRunning, setIsQuaggaRunning] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [opened, setOpened] = useState(true)
@@ -210,6 +211,7 @@ const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos }) 
             isProcessing={false}
             onClick={() => {
               setOpened(false)
+              updateView('form')
             }}
             className="absolute top-8 right-8 bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled text-white"
           ></IconButton>
@@ -217,16 +219,19 @@ const QuaggaScanner: React.FC<QuaggaScannerProps> = ({ prevMemo, updateMemos }) 
             <div id={styles.my_inner}>
               <div>= QuaggaJS =</div>
               <div>
-                <button id={styles.my_start} onClick={startQuagga}>Start</button>
-                <button id={styles.my_stop} onClick={stopQuagga}>Stop</button>
+                <button id={styles.my_button2} onClick={startQuagga}>Start</button>
+                <button id={styles.my_button2} onClick={stopQuagga}>Stop</button>
               </div>
               <div id={styles.my_quagga}>
                 <video ref={videoRef} style={{ width: '100%', height: '100%' }} autoPlay muted></video>
                 <canvas className="overlay"></canvas>
               </div>
-              <div id={styles.my_result}>***</div>
-              <div id={styles.my_barcode}>
-                <div>***</div>
+              <div id={styles.my_barcode}>{detectedProduct?.category ? detectedProduct.category : "***"}</div>
+              <div id={styles.my_result}>
+                <div>{detectedProduct?.barcode ? detectedProduct.barcode : "***"}</div>
+              </div>
+              <div id={styles.my_result}>
+                <div>{detectedProduct?.found ? '更新しました' : "***"}</div>
               </div>
             </div>
           </div>

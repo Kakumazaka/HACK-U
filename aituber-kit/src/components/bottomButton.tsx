@@ -7,6 +7,7 @@ import { handleSendChatFn2 } from '@/features/chat/handlers';
 import { handleSendChatFn } from '@/features/chat/handlers';
 import MemoManager from './buttonComponents/memo';
 import QuaggaScanner from './buttonComponents/quagga';
+import settingsStore from '@/features/stores/settings';
 
 // メモの型定義
 interface Memo {
@@ -26,7 +27,10 @@ export const BottomButton = () => {
     const [memos, setMemos] = useState<Memo[]>([]);
     const updateMemos = (newMemos: Memo[]) => {
         setMemos(newMemos);
-      };
+    };
+    const updateView = (view: 'form' | 'memo' | 'quagga') => {
+        setView(view);
+    };
 
     useEffect(() => {
         // Webアプリ起動時にサーバーから消費期間経過したカテゴリ名を取得し、メモに追加する
@@ -103,23 +107,17 @@ export const BottomButton = () => {
         setMemos([]);
     };
 
-    const handleBarcodeDetected = (barcode: string) => {
-        console.log('検出されたバーコード:', barcode);
-        // 検出されたバーコードに基づいて何かしらの処理を行う（例: サーバーからデータを取得してメモに追加）
-        addMemo(`検出されたバーコード: ${barcode}`);
-    };
-
     // APIのエンドポイント
     const apiUrl = "http://localhost:5000/api/add-memo"
     const getMemo = async (): Promise<string> => {
-        let message = 'あたなたは買い物メモアプリの中にいるユーザー(かいかい)の彼女です';
-        message += '以下に買い物メモに書いてあるアイテムを示します。ユーザー（かいかい）に可愛くお願いしてください。'; // message を初期化
+        let message = `あたなたは買い物メモアプリの中にいるユーザー（かいかい）の彼女です`;
+        message += `以下に買い物メモに書いてあるアイテムを示します。ユーザー（かいかい）に可愛くお願いしてください。`; // message を初期化
         if (memos.length > 0) {
             message += `アイテム一覧:\n`;
             message += memos.map(memo => memo.content).join(', ');
             message += `\nこれらのアイテムを買ってきてほしいとすべて読み上げたうえでお願いしてください。`;
         } else {
-            message += 'メモがありませんでした。今買ってきてほしいものはないことを伝えてください。'
+            message += `メモがありませんでした。今買ってきてほしいものはないことを伝えてください。`
         }
         console.log("message:", message);
         // try {
@@ -150,18 +148,18 @@ export const BottomButton = () => {
     const showMemo = useCallback(async () => {
         if (!showForm) {
             const memoText = await getMemo();
-            console.log('memoText:',memoText);
+            console.log('memoText:', memoText);
             //ここに初期メッセージ
             handleSendChat(memoText);
         }
         setShowForm(true);
     }, [showForm, handleSendChat])
-        //memo編集画面への遷移
-        const goEditMemo = () => setView('memo');
-        //バーコードの読み取り
-        const readBarCode = () => setView('quagga');
-        const back = () => {
-            setShowForm(false);
+    //memo編集画面への遷移
+    const goEditMemo = () => setView('memo');
+    //バーコードの読み取り
+    const readBarCode = () => setView('quagga');
+    const back = () => {
+        setShowForm(false);
     }
     return (
         <>
@@ -225,8 +223,13 @@ export const BottomButton = () => {
                 editMemo={editMemo}
                 deleteMemo={deleteMemo}
                 clearMemos={clearMemos}
+                updateView={updateView}
             />}
-            {view === 'quagga' && <QuaggaScanner prevMemo={memos} updateMemos = {updateMemos} />}
+            {view === 'quagga' && <QuaggaScanner
+                prevMemo={memos}
+                updateMemos={updateMemos}
+                updateView={updateView}
+            />}
         </>
     );
 };

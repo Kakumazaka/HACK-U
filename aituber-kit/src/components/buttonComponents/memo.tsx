@@ -15,9 +15,10 @@ interface MemoManagerProps {
     editMemo: (id: number, updatedContent: string) => void;
     deleteMemo: (id: number) => void;
     clearMemos: () => void;
+    updateView: (view: 'form' | 'memo' | 'quagga') => void;
 }
 
-const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, deleteMemo, clearMemos }) => {
+const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, deleteMemo, clearMemos, updateView }) => {
     const [newMemo, setNewMemo] = useState('');
     const [opened, setOpened] = useState(true)
 
@@ -30,6 +31,7 @@ const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, del
                         isProcessing={false}
                         onClick={() => {
                             setOpened(false)
+                            updateView('form')
                         }}
                         className="absolute top-8 right-8 bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled text-white"
                     ></IconButton>
@@ -40,7 +42,7 @@ const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, del
                         onChange={(e) => setNewMemo(e.target.value)}
                         placeholder="メモを入力してください"
                     />
-                    <button id={styles.my_start} onClick={() => { addMemo(newMemo); setNewMemo(''); }}>メモを追加</button>
+                    <button id={styles.my_button} onClick={() => { addMemo(newMemo); setNewMemo(''); }}>メモを追加</button>
 
                     <ul>
                         {memos.map((memo) => (
@@ -50,11 +52,11 @@ const MemoManager: React.FC<MemoManagerProps> = ({ memos, addMemo, editMemo, del
                                     value={memo.content}
                                     onChange={(e) => editMemo(memo.id, e.target.value)}
                                 />
-                                <button onClick={() => deleteMemo(memo.id)}>削除</button>
+                                <button id={styles.my_button} onClick={() => deleteMemo(memo.id)}>削除</button>
                             </li>
                         ))}
                     </ul>
-                    <button onClick={clearMemos}>全てクリア</button>
+                    <button id={styles.my_button} onClick={clearMemos}>全てクリア</button>
                 </div>
             </div>)}
         </div>
