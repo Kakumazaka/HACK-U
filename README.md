@@ -16,10 +16,10 @@
 ## 使用技術
 - Next.js
 - Express.js
-- MySQL
+- PostgreSQL
 
 ## 機能一覧
-まったく手を加えていないAituberkitの機能は除きます。
+Aituberkitの手を加えていない部分の機能は除きます。
 - メモ読み上げ機能
     - VoiceVox nemo読み上げボイス連携機能
 - メモ編集機能
