@@ -1,5 +1,7 @@
 # 同棲彼女からのお使いメモ
 ![Image](https://github.com/user-attachments/assets/def738fe-d151-4132-ba8b-9acf20465b43)
+- [発表スライドはこちら](https://www.canva.com/design/DAGRG-ZJbtA/Ni4mGHB5DEEIhurEOsnjSA/edit)
+- [デモ動画はこちら(音でます！)](https://drive.google.com/file/d/1N8QG7fGLCDmdEzANq-Pex-fPUQuixr5P/view?usp=drive_link)
 ## 概要
 消耗品がなくなりそうになったときに買い物メモに追加し、VRアバターが買い物メモを読み上げてくれるサービスです。  
 消耗品は登録する必要があり、
